@@ -3,9 +3,8 @@
   org.clojure/clojure            {:mvn/version "1.12.0"}
   org.clojure/core.match         {:mvn/version "1.1.0"}
   org.clj-commons/pretty         {:mvn/version "3.1.1"}
-  datascript/datascript          {:mvn/version "1.7.3"}
 
-  com.walmartlabs/lacinia        {:mvn/version "1.2.2"}
+  datascript/datascript          {:mvn/version "1.7.3"}
 
   manifold/manifold              {:mvn/version "0.4.3"}
   funcool/cuerdas                {:mvn/version "2023.11.09-407"}

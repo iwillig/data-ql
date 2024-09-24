@@ -1,3 +1,3 @@
 (ns data-ql.main)
 
-(defn -main [& args])
+(defn -main [& _args])
