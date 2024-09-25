@@ -1,0 +1,87 @@
+"""
+This is an example doc string
+"""
+type Query {
+  dog: Dog ## This is is a comment
+  findDog(searchBy: FindDogInput): Dog
+}
+
+type AddDocResult {
+  name: String
+  nickName: String
+  barkVolumn: Int
+}
+
+input AddDogInput {
+  name: String
+  nickName: String
+  barkVolumn: Int
+}
+
+type Mutation {
+  addDog(inputs: AddDogInput): AddDocResult
+}
+
+"""
+Another doc string
+"""
+enum DogCommand {
+  SIT
+  DOWN
+  HEEL
+}
+
+## graphql-checker: Don't reuser the type implementation in the doc string.
+"""
+A dog implements the pet
+"""
+type Dog implements Pet & NickName {
+  name: String!
+  nickname: String
+  barkVolume: Int
+  doesKnowCommand(dogCommand: DogCommand!): Boolean!
+  isHouseTrained(atOtherHomes: Boolean): Boolean!
+  owner: Human
+}
+
+interface Sentient {
+  name: String!
+}
+
+interface Pet {
+  name: String!
+}
+
+interface NickName {
+  nickName: String
+}
+
+type Alien implements Sentient {
+  name: String!
+  homePlanet: String
+}
+
+type Human implements Sentient {
+  name: String!
+  pets: [Pet!]
+}
+
+enum CatCommand {
+  JUMP
+}
+
+type Cat implements Pet {
+  name: String!
+  nickname: String
+  doesKnowCommand(catCommand: CatCommand!): Boolean!
+  meowVolume: Int
+}
+
+union CatOrDog = Cat | Dog
+union DogOrHuman = Dog | Human
+union HumanOrAlien = Human | Alien
+
+input FindDogInput {
+  name: String
+  owner: String
+}
