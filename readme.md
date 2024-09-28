@@ -11,9 +11,13 @@ approach to both parsing, schema definition and execution engine.
 
 DataQL uses the same underlying parsing engine as Lacinia, clj-antr.
 
-DataQL exposes both your GraphQL Schema and your GraphQL Operations
+DataQL exposes both your GraphQL Schema *and* your GraphQL Operations
 (Mutations and Queries) as a DataLog database. This DataLog database
 provides a convent place to discover and analysis your GraphQL System.
+
+```clojure
+
+```
 
 ## Schema Definition
 

@@ -1,15 +1,16 @@
 {:deps
- {org.languagetool/language-en   {:mvn/version "6.4"}
-  org.clojure/clojure            {:mvn/version "1.12.0"}
-  org.clojure/core.match         {:mvn/version "1.1.0"}
-  org.clj-commons/pretty         {:mvn/version "3.2.0"}
-  datascript/datascript          {:mvn/version "1.7.3"}
-  manifold/manifold              {:mvn/version "0.4.3"}
-  funcool/cuerdas                {:mvn/version "2023.11.09-407"}
-  clj-antlr/clj-antlr            {:mvn/version "0.2.13"}
-  metosin/malli                  {:mvn/version "0.16.4"}
-  org.clojure/tools.cli          {:mvn/version "1.1.230"}
-  org.slf4j/slf4j-simple         {:mvn/version "2.0.16"}}
+ {org.languagetool/language-en {:mvn/version "6.4"}
+  org.clojure/clojure          {:mvn/version "1.12.0"}
+  org.clojure/core.match       {:mvn/version "1.1.0"}
+  org.clj-commons/pretty       {:mvn/version "3.2.0"}
+  datascript/datascript        {:mvn/version "1.7.3"}
+  manifold/manifold            {:mvn/version "0.4.3"}
+  funcool/cuerdas              {:mvn/version "2023.11.09-407"}
+  clj-antlr/clj-antlr          {:mvn/version "0.2.13"}
+  metosin/malli                {:mvn/version "0.16.4"}
+  fipp/fipp                    {:mvn/version "0.6.26"}
+  org.clojure/tools.cli        {:mvn/version "1.1.230"}
+  org.slf4j/slf4j-simple       {:mvn/version "2.0.16"}}
 
  :paths ["src" "dev" "test" "resources"]
 

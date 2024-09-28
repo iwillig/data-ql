@@ -3,3 +3,4 @@
 /.lsp/
 /junit.xml
 /target/
+/.nrepl-port
