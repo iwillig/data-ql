@@ -17,6 +17,7 @@
  :aliases {:dev {:extra-deps {lambdaisland/kaocha           {:mvn/version "1.87.1366"}
                               lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}
                               lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}
+                              vvvvalvalval/scope-capture    {:mvn/version "0.3.3"}
                               org.clojure/tools.nrepl       {:mvn/version "0.2.11"}
                               nubank/matcher-combinators    {:mvn/version "3.9.1"}
                               org.clojure/test.check        {:mvn/version "1.1.1"}

@@ -1,5 +1,6 @@
 (ns data-ql.parser
   (:require
+   [data-ql.entities :as dql.entities]
    [clojure.string :as str]
    [clj-antlr.core :as antlr]
    [fipp.clojure :as fipp]
@@ -10,55 +11,15 @@
   (let [[arg rest-args] args]
 
     (println)
-    (fipp/pprint (if-not (seq rest-args)
-                   arg
-                   args))
+    #_(fipp/pprint (if-not (seq rest-args)
+                     arg
+                     args))
     (println)))
 
 (set! *warn-on-reflection* true)
 
 (def default-antlr-options
   {:throw? false})
-
-(defn detect-namespace
-  [x]
-  (::namespace (meta x)))
-
-(defn make-namespaced-map
-  [namespace values]
-  (with-meta
-    (reduce-kv (fn [acc key value]
-                 (assoc acc (keyword
-                             (name namespace)
-                             (name key))
-                        value))
-               {}
-               values)
-    {::namespace namespace}))
-
-(def position        (partial make-namespaced-map :position))
-(def description     (partial make-namespaced-map :description))
-(def name-token      (partial make-namespaced-map :name-token))
-(def any-token       (partial make-namespaced-map :any-token))
-(def list-name-token (partial make-namespaced-map :list-name-token))
-
-(def type-spec   (partial make-namespaced-map :type-spec))
-(def field-def   (partial make-namespaced-map :field-def))
-(def fields      (partial make-namespaced-map :fields))
-(def list-type   (partial make-namespaced-map :list-type))
-(def type-name   (partial make-namespaced-map :type-name))
-(def type-def    (partial make-namespaced-map :type-def))
-(def argument    (partial make-namespaced-map :argument))
-(def arg-list    (partial make-namespaced-map :arg-list))
-(def implements  (partial make-namespaced-map :implements))
-(def required    (partial make-namespaced-map :required))
-
-(def input-type-def (partial make-namespaced-map :input-type-def))
-
-(def input-value-def (partial make-namespaced-map :input-value-def))
-(def input-value-defs (partial make-namespaced-map :input-value-defs))
-
-(def make-graphql-schema (partial make-namespaced-map ::graphql-schema))
 
 ;; Taken from Lacinia
 (defn compile-grammar
@@ -100,17 +61,19 @@
   [antrl-prod]
   (let [antlr-meta (meta antrl-prod)]
     (when (:clj-antlr/position antlr-meta)
-      (position
-       (:clj-antlr/position antlr-meta)))))
+      (dql.entities/position (:clj-antlr/position antlr-meta)))))
 
-(defmulti antlr->map #'first)
+(defmulti gql-tree
+  "Given an antlr parse tree
+   Returns a normalized and structured tree"
+  #'first)
 
 (def transform-xform
   (comp
    (remove keyword?)
    (remove string?)
    (remove ignored-terminal?)
-   (map antlr->map)
+   (map gql-tree)
    (remove nil?)))
 
 (defn- trim-description-value
@@ -122,119 +85,127 @@
 
 (defn prepare-parsed-production
   [form]
-  (group-by detect-namespace
+  (group-by dql.entities/detect-namespace
             (into []
                   transform-xform
                   form)))
 
-(defmethod antlr->map :default
+(defmethod gql-tree :default
   [[:as antrl-prod]]
   antrl-prod)
 
-(defmethod antlr->map :nameTokens
+(defmethod gql-tree :nameTokens
   [[_ token :as args]]
-  (name-token
+  (dql.entities/name-token
    {:name token
     :position (get-antrl-position args)}))
 
-(defmethod antlr->map :description
+(defmethod gql-tree :description
   [[_ description-value :as args]]
-  (description
+  (dql.entities/description
    {:value
     (trim-description-value description-value)
     :position (get-antrl-position args)}))
 
-(defmethod antlr->map :anyName
+(defmethod gql-tree :anyName
   [[_ name-token :as args]]
-  (any-token {:name (antlr->map name-token)}))
+  (dql.entities/any-token {:name (gql-tree name-token)}))
 
-(defmethod antlr->map :required
+(defmethod gql-tree :required
   [[:as args]]
-  (required {:position (get-antrl-position args)}))
+  (dql.entities/required {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :implementationDef
+(defmethod gql-tree :implementationDef
   [[:as args]]
-  (implements {:position (get-antrl-position args)}))
+  (dql.entities/implements {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :typeName
+(defmethod gql-tree :typeName
   [[:as args]]
   (let [{:keys [any-token] :as info} (prepare-parsed-production args)]
-    (type-name {:position (get-antrl-position args)
-                :any-token any-token})))
+    (dql.entities/type-name {:position (get-antrl-position args)
+                             :any-token any-token})))
 
-(defmethod antlr->map :typeSpec
+(defmethod gql-tree :typeSpec
   [[:as args]]
   (let [{:keys [type-name required] :as info} (prepare-parsed-production args)]
-    (type-spec
+    (dql.entities/type-spec
      (merge
       {:position (get-antrl-position args)
        :type-name type-name}
       (when require
         {:required required})))))
 
-(defmethod antlr->map :argument
+(defmethod gql-tree :argument
   [[:as args]]
-  (argument {:position (get-antrl-position args)}))
+  (dql.entities/argument {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :argList
+(defmethod gql-tree :argList
   [[:as args]]
-  (arg-list {:position (get-antrl-position args)}))
+  (dql.entities/arg-list {:position (get-antrl-position args)}))
 
-(defmethod antlr->map  :fieldDef
+(defmethod gql-tree  :fieldDef
   [[:as args]]
-  (let [{:keys [any-token type-spec arg-list] :as _info} (prepare-parsed-production args)]
-    (field-def {:position  (get-antrl-position args)
-                :any-token (first any-token)
-                :arg-list  arg-list
-                :type-spec (first type-spec)})))
+  (let [{:dql.entities/keys [any-token type-spec arg-list] :as info} (prepare-parsed-production args)]
+    (dql.entities/field-def
+     (merge
+      {:position  (get-antrl-position args)
+       :any-token any-token
+       :type-spec type-spec}
+      (when arg-list
+        {:arg-list arg-list})))))
 
-(defmethod antlr->map  :fieldDefs
+(defmethod gql-tree  :fieldDefs
   [[:as args]]
-  (let [{:keys [field-def] :as info} (prepare-parsed-production args)]
-    (fields {:position (get-antrl-position args)
-             :fields   field-def})))
+  (let [{:dql.entities/keys [field-def] :as info} (prepare-parsed-production args)]
+    (pp info)
+    (dql.entities/fields {:position (get-antrl-position args)
+                          :fields   field-def})))
 
-(defmethod antlr->map :listType
+(defmethod gql-tree :listType
   [[:as args]]
-  (list-type {:position (get-antrl-position args)}))
+  (dql.entities/list-type {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :inputValueDefs
+(defmethod gql-tree :inputValueDefs
   [[:as args]]
-  (input-value-defs {:position (get-antrl-position args)}))
+  (dql.entities/input-value-defs {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :inputValueDef
+(defmethod gql-tree :inputValueDef
   [[:as args]]
-  (input-value-def {:position (get-antrl-position args)}))
+  (dql.entities/input-value-def {:position (get-antrl-position args)}))
 
-(defmethod antlr->map :inputTypeDef
+(defmethod gql-tree :inputTypeDef
   [[:as args]]
   (let [{:as forms} (prepare-parsed-production args)]
-    (input-type-def {:position (get-antrl-position args)})))
+    (dql.entities/input-type-def {:position (get-antrl-position args)})))
 
-(defmethod antlr->map :typeDef
+(defmethod gql-tree :typeDef
   [[:as args]]
-  (let [{:keys [fields any-token description]}
+  (let [{::dql.entities/keys [fields any-token description] :as info}
         (prepare-parsed-production args)]
-    (type-def
+
+    (dql.entities/make-type-def
      (merge
       {:fields      fields
        :any-name    any-token}
       (when description
         {:description description})))))
 
-(defmethod antlr->map :graphqlSchema
+(defmethod gql-tree :graphqlSchema
   [[_graphql-schema & forms :as args]]
-  (let [{:keys [type-def input-value-def]} (prepare-parsed-production forms)]
-    (make-graphql-schema {:position (get-antrl-position args)
-                          :input-value-def input-value-def
-                          :type-def        type-def})))
+  (let [{::dql.entities/keys [type-def input-type-def] :as info} (prepare-parsed-production forms)]
+    (dql.entities/make-graphql-schema
+     {:position       (get-antrl-position args)
+      :input-type-def input-type-def
+      :type-def       type-def})))
 
 (comment
 
-  (ns-unmap *ns* 'antlr->map)
+  (ns-unmap *ns* 'gql-tree)
 
-  (antlr->map
-   (parse-schema-file "example.graphql")))
+  (gql-tree
+   (parse-schema-file "example.graphql"))
+
+  (ns-unmap *ns* 'gql-tree))
 
 (defn parse-file
   [path])
