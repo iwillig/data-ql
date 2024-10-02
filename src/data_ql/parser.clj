@@ -11,9 +11,9 @@
   (let [[arg rest-args] args]
 
     (println)
-    #_(fipp/pprint (if-not (seq rest-args)
-                     arg
-                     args))
+    (fipp/pprint (if-not (seq rest-args)
+                   arg
+                   args))
     (println)))
 
 (set! *warn-on-reflection* true)
@@ -35,7 +35,7 @@
 (def ^:private ignored-terminals
   "Textual fragments which are to be immediately discarded as they have no
   relevance to a formed parse tree."
-  #{"'{'" "'}'" "'('" "')'" "'['" "']'" "'...'" "'fragment'" "'on'" "type"
+  #{"'{'" "'}'" "'('" "')'" "'['" "']'" "'...'" "'fragment'" "'on'" "type" "&"
     "':'" "'='" "'$'" "'!'" "\"" "'@'"})
 
 (defn ignored-terminal?
@@ -107,32 +107,38 @@
     (trim-description-value description-value)
     :position (get-antrl-position args)}))
 
+(comment '(:nameTokens "name"))
 (defmethod gql-tree :anyName
   [[_ name-token :as args]]
-  (dql.entities/any-token {:name (gql-tree name-token)}))
+  (dql.entities/any-name {:name (gql-tree name-token)}))
 
 (defmethod gql-tree :required
   [[:as args]]
   (dql.entities/required {:position (get-antrl-position args)}))
 
+(comment '(:implementationDef "implements" "Pet" "&" "NickName"))
 (defmethod gql-tree :implementationDef
-  [[:as args]]
-  (dql.entities/implements {:position (get-antrl-position args)}))
+  [[_ & implements-values :as args]]
+  (dql.entities/implements
+   {:values (remove ignored-terminal? implements-values)
+    :position (get-antrl-position args)}))
 
+(comment '(:typeName (:anyName (:nameTokens "String"))))
 (defmethod gql-tree :typeName
   [[:as args]]
-  (let [{:keys [any-token] :as info} (prepare-parsed-production args)]
-    (dql.entities/type-name {:position (get-antrl-position args)
-                             :any-token any-token})))
+  (let [{:data-ql.entities/keys [any-name] :as info} (prepare-parsed-production args)]
+    (dql.entities/type-name
+     {:name (first any-name)
+      :position (get-antrl-position args)})))
 
 (defmethod gql-tree :typeSpec
   [[:as args]]
-  (let [{:keys [type-name required] :as info} (prepare-parsed-production args)]
+  (let [{:data-ql.entities/keys [type-name required] :as info} (prepare-parsed-production args)]
     (dql.entities/type-spec
      (merge
       {:position (get-antrl-position args)
-       :type-name type-name}
-      (when require
+       :type-name (first type-name)}
+      (when required
         {:required required})))))
 
 (defmethod gql-tree :argument
@@ -145,21 +151,23 @@
 
 (defmethod gql-tree  :fieldDef
   [[:as args]]
-  (let [{:dql.entities/keys [any-token type-spec arg-list] :as info} (prepare-parsed-production args)]
+  (let [{:data-ql.entities/keys [any-name type-spec arg-list required] :as info} (prepare-parsed-production args)]
+    (pp (keys info))
     (dql.entities/field-def
      (merge
       {:position  (get-antrl-position args)
-       :any-token any-token
+       :name (first any-name)
+       :required required
        :type-spec type-spec}
       (when arg-list
         {:arg-list arg-list})))))
 
-(defmethod gql-tree  :fieldDefs
+(defmethod gql-tree :fieldDefs
   [[:as args]]
-  (let [{:dql.entities/keys [field-def] :as info} (prepare-parsed-production args)]
-    (pp info)
+  (let [{:dql.entities/keys [_field-def] :as info} (prepare-parsed-production args)]
+
     (dql.entities/fields {:position (get-antrl-position args)
-                          :fields   field-def})))
+                          :fields   (:data-ql.entities/field-def info)})))
 
 (defmethod gql-tree :listType
   [[:as args]]
@@ -180,13 +188,12 @@
 
 (defmethod gql-tree :typeDef
   [[:as args]]
-  (let [{::dql.entities/keys [fields any-token description] :as info}
+  (let [{::dql.entities/keys [fields any-name description] :as info}
         (prepare-parsed-production args)]
-
     (dql.entities/make-type-def
      (merge
       {:fields      fields
-       :any-name    any-token}
+       :name    (first any-name)}
       (when description
         {:description description})))))
 
@@ -195,8 +202,8 @@
   (let [{::dql.entities/keys [type-def input-type-def] :as info} (prepare-parsed-production forms)]
     (dql.entities/make-graphql-schema
      {:position       (get-antrl-position args)
-      :input-type-def input-type-def
-      :type-def       type-def})))
+      ;;:input-type-def input-type-def
+      :type-defs       type-def})))
 
 (comment
 

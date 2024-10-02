@@ -19,7 +19,7 @@
 (def position        (partial make-namespaced-map ::position))
 (def description     (partial make-namespaced-map ::description))
 (def name-token      (partial make-namespaced-map ::name-token))
-(def any-token       (partial make-namespaced-map ::any-token))
+(def any-name        (partial make-namespaced-map ::any-name))
 (def list-name-token (partial make-namespaced-map ::list-name-token))
 
 (def type-spec   (partial make-namespaced-map ::type-spec))
@@ -34,6 +34,9 @@
 (def required    (partial make-namespaced-map ::required))
 
 (def input-type-def (partial make-namespaced-map ::input-type-def))
+
+(def input-value-def (partial make-namespaced-map ::input-value-def))
+(def input-value-defs (partial make-namespaced-map ::input-value-defs))
 
 (def input-value-def (partial make-namespaced-map ::input-value-def))
 (def input-value-defs (partial make-namespaced-map ::input-value-defs))
