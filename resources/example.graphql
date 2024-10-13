@@ -10,7 +10,17 @@ type AddDocResult {
   name: String
   nickName: String
   barkVolumn: Int
+  ids: [ID!]!
 }
+
+type UseAddDocResult {
+  result: AddDocResult
+}
+
+input UseAddDocResult {
+  name: string
+}
+
 
 input AddDogInput {
   name: String

@@ -11,47 +11,65 @@
 (defn- next-temp-id []
   (.decrementAndGet ^AtomicLong temp-id))
 
+;; String, Int, ID
 (def schema
-  {})
+  {:type-def/name       {:db/type :db.type/keyword}
+   :type-def/fields     {:db/type        :db.type/ref
+                         :db/cardinality :db.cardinality/many}
+   :field/name          {:db/type :db.type/keyword}
+   :field/type-sec      {:db/type :db.type/ref}
+   :type-spec/type      {:db/type :db.type/ref}
+   :type-spec/required? {:db/type :db.type/boolean}
 
-(defn gen-tx-data-position
-  [position-temp-id position]
-  (assoc position :db/id position-temp-id))
 
-(defn gen-tx-data-graphql-schema
-  [gql-temp-id position-temp-id entity]
-  [{:db/id gql-temp-id
-    :graphql/name ""
-    :graphql/position position-temp-id}
-   (gen-tx-data-position position-temp-id (:graphql-schema/position entity))])
-
-(defmulti to-datalog
-  (fn [acc gql-component]
-    (dql.entities/detect-namespace gql-component)))
-
-(defmethod to-datalog :default
-  [acc args]
-  acc)
-
-(defmethod to-datalog :data-ql.entities/graphql-schema
-  [acc args]
-  (let [graphql-schema-temp-id (next-temp-id)
-        position-temp-id (next-temp-id)]
-
-    (update acc ::tx-data into (gen-tx-data-graphql-schema graphql-schema-temp-id position-temp-id args))
-    (update acc ::temp-ids into [graphql-schema-temp-id position-temp-id])))
-
-(defn flatten-gql-tree
-  [gql-tree]
-  (to-datalog {::tx-data []
-               ::temp-ids []}
-              gql-tree))
+   })
 
 (comment
 
+  (:typeSpec
+   (:listType
+    (:typeSpec
+     (:typeName (:anyName (:nameTokens "ID")))
+     (:required "!")))
+   (:required "!"))
+
+
+  {:type-spec/type {:type-def/name :ID}
+   :type-spec/required? true
+   :type-spec/inner-required? true
+   :type-spec/cardinality :type-spec.cardinality/many}
+
+  )
+
+
+
+
+(comment
+  '(tree-seq branch?
+             childern
+             root)
+
+  )
+
+(defn procese-tree
+  [graphql-tree]
+  (reduce (fn []
+
+            )
+          {:refs {:type {}
+                  :input {:FindDogInput :temp-id}}
+           :tx-data [[:db/add ]]}
+
+          graphql-tree))
+
+
+
+
+(comment
+
+
+
   (ns-unmap *ns* 'to-datalog)
 
-  (def schema-tree (dql.parser/gql-tree
-                    (dql.parser/parse-schema-file "example.graphql")))
 
-  (flatten-gql-tree schema-tree))
+  )

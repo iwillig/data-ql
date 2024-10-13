@@ -212,6 +212,33 @@
   (gql-tree
    (parse-schema-file "example.graphql"))
 
+
+  (:typeDef
+   (:description "\"\"\"\nThis is an example doc string\n\"\"\"")
+   "type"
+   (:anyName (:nameTokens "Query"))
+   (:fieldDefs
+    "{"
+    (:fieldDef
+     (:anyName (:nameTokens "dog"))
+     ":"
+     (:typeSpec (:typeName (:anyName (:nameTokens "Dog")))))
+    (:fieldDef
+     (:anyName (:nameTokens "findDog"))
+     (:argList
+      "("
+      (:argument
+       (:anyName (:nameTokens "searchBy"))
+       ":"
+       (:typeSpec
+        (:typeName (:anyName (:nameTokens "FindDogInput")))))
+      ")")
+     ":"
+     (:typeSpec (:typeName (:anyName (:nameTokens "Dog")))))
+    "}"))
+
+
+
   (ns-unmap *ns* 'gql-tree))
 
 (defn parse-file
